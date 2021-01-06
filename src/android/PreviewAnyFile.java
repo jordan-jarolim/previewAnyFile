@@ -11,11 +11,14 @@ import org.apache.cordova.CordovaPlugin;
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import java.io.File;
 import java.net.URLEncoder;
 
 import android.os.Build;
 import java.lang.reflect.Method;
 import android.os.StrictMode;
+
+import androidx.core.content.FileProvider;
 
 public class PreviewAnyFile extends CordovaPlugin {
 
@@ -25,6 +28,7 @@ public class PreviewAnyFile extends CordovaPlugin {
   @Override
   public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
     this.callbackContext = callbackContext;
+    this.context = this.cordova.getContext();
     // this.executeArgs = args;
     if (action.equals("preview")) {
       String url = args.getString(0);
@@ -35,7 +39,11 @@ public class PreviewAnyFile extends CordovaPlugin {
   }
 
   private void presentFile(Intent intent, Uri uri, String type) {
-    intent.setDataAndType(uri, type);
+    // https://stackoverflow.com/questions/38200282/android-os-fileuriexposedexception-file-storage-emulated-0-test-txt-exposed
+    // https://inthecheesefactory.com/blog/how-to-share-access-to-file-with-fileprovider-on-android-nougat/en
+    File myFile = new File(String.valueOf(uri).replace("file://", ""));
+    Uri myUri = FileProvider.getUriForFile(this.context, this.context.getApplicationContext().getPackageName() + ".provider", myFile);
+    intent.setDataAndType(myUri, type);
     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
     this.cordova.getActivity().startActivityForResult(intent, 1);
   }
